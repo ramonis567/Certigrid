@@ -1,4 +1,4 @@
-# Certigrid — System Specification (MVP)
+﻿# Certigrid — System Specification (MVP)
 
 ## Version
 MVP v1.0
