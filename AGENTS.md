@@ -137,6 +137,26 @@ The audit trace is central to the product story. Make the lifecycle visually cle
 - Keep generated or derived artifacts out of source control unless the user asks to track them.
 - Add tests around lifecycle state transitions, quantity calculations, and one-time measurement usage.
 
+## Local Environment Notes
+
+Current Phase 1 scaffold status:
+
+- The Turborepo / npm workspace scaffold builds successfully.
+- `npm.cmd run build` passed for the root workspace when run outside the sandbox.
+- `npm.cmd run typecheck` passed.
+- `npm.cmd run lint` passed.
+- `npm.cmd run test` passed for the root workspace.
+- `npm.cmd run test` passed inside `programs/certigrid_program` for the TypeScript placeholder test.
+- `npm.cmd audit --audit-level=moderate` reported zero vulnerabilities in both the root workspace and `programs/certigrid_program`.
+
+Local limitations:
+
+- Do not try to start the local dev server again unless the user explicitly asks for it.
+- The last dev-server start attempt was interrupted by the user, and `127.0.0.1:3000` was not running afterward.
+- `anchor`, `solana`, `rustc`, and `cargo` were not available in the shell session, so the Anchor/Solana program build was not verified.
+- PowerShell blocks `npm.ps1`; use `npm.cmd` for Node package commands on this machine.
+- Some sandboxed Windows file operations produced `EPERM` rename/unlink errors in `.next` / `.turbo`; production build succeeded when run outside the sandbox.
+
 ## Simulation Formula
 
 The README defines the MVP generation formula as:

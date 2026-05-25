@@ -1,0 +1,17 @@
+{
+  "name": "@certigrid/solana-program",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "build": "anchor build",
+    "anchor:test": "anchor test",
+    "test": "vitest run --pool=threads --passWithNoTests",
+    "lint": "cargo fmt --check",
+    "format": "cargo fmt"
+  },
+  "devDependencies": {
+    "@anchor-lang/core": "^1.0.0",
+    "typescript": "latest",
+    "vitest": "latest"
+  }
+}
