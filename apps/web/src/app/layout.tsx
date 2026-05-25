@@ -19,15 +19,22 @@ export default function RootLayout({
           <header className="topbar">
             <div className="topbar__inner">
               <Link className="brand" href="/">
-                <strong>Certigrid</strong>
-                <span>Renewable certificate traceability</span>
+                <span className="brand__mark">V</span>
+                <span>
+                  <strong>Certigrid</strong>
+                  <span>Verified energy market</span>
+                </span>
               </Link>
               <nav className="nav" aria-label="Primary navigation">
-                <Link href="/admin">Admin</Link>
                 <Link href="/marketplace">Marketplace</Link>
+                <Link href="/admin">Admin</Link>
                 <Link href="/portfolio">Portfolio</Link>
                 <Link href="/audit">Audit</Link>
               </nav>
+              <a className="wallet-button" href="/audit">
+                <span className="nav-icon" aria-hidden="true" />
+                Connect Wallet
+              </a>
             </div>
           </header>
           <main className="main">{children}</main>
