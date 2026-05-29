@@ -6,7 +6,7 @@ The MVP roadmap exists to deliver the Certigrid proof of concept described in th
 
 The target demo is:
 
-> A solar plant produces simulated energy, Certigrid records the generation data, creates a certificate batch, a customer negotiates and purchases part of that batch, and an auditor verifies the full certificate trace on-chain.
+> A solar plant produces simulated energy, Certigrid records the generation data, creates a certificate batch, a customer negotiates and purchases part of that batch, and an auditor verifies the full certificate trace. Until final Solana integration, the trace uses mocked transaction references.
 
 The roadmap prioritizes lifecycle completeness over production breadth.
 
@@ -16,14 +16,14 @@ The MVP is successful when it can demonstrate:
 
 - An admin can register a renewable energy asset.
 - The platform can simulate energy measurements from asset capacity and generation rules.
-- Approved measurements can be registered or represented on Solana Devnet.
+- Approved measurements can be represented through deterministic hashes and proof transaction references.
 - Registered measurements can be aggregated into certificate batches.
 - Certificate batches can be exposed to customers in a marketplace.
 - A customer can submit a negotiation or allocation request.
 - An accepted request can become a certificate claim.
 - Certificate ownership, quantity, and status can be updated.
 - Any user can verify a batch or claim through a public trace page.
-- The audit page shows off-chain metadata, Solana transaction references, hashes, and lifecycle status.
+- The audit page shows off-chain metadata, transaction references, hashes, and lifecycle status.
 
 ## 3. Product Scope
 
@@ -32,15 +32,15 @@ The MVP is successful when it can demonstrate:
 - Admin asset registry.
 - Simulation rule configuration.
 - Measurement generation and approval.
-- Measurement registration on Solana.
+- Measurement proof registration with mocked transaction references until final Solana integration.
 - Certificate batch creation.
-- Batch registration on Solana.
+- Batch proof registration with mocked transaction references until final Solana integration.
 - Marketplace listing.
 - Negotiation request flow.
 - Claim creation and status updates.
 - Customer certificate portfolio.
 - Public audit search and trace visualization.
-- Solana transaction hash display.
+- Transaction reference display, mocked first and replaced by Solana Devnet references in the final integration phase.
 
 ### 3.2 Out of scope
 
@@ -59,8 +59,9 @@ The MVP is successful when it can demonstrate:
 The roadmap follows three delivery principles:
 
 1. Build the lifecycle in order.
-2. Keep blockchain integration focused on proof and traceability.
+2. Build frontend and application backend lifecycle first, with deterministic hashes and mocked transaction references.
 3. Validate the demo narrative at the end of every major milestone.
+4. Keep blockchain integration focused on replacing mock proof references with real Solana Devnet transactions.
 
 The MVP should not start with the marketplace alone. Without asset, measurement, batch, and audit trace foundations, the marketplace becomes a generic listing screen and loses the blockchain justification.
 
@@ -97,7 +98,7 @@ Deliverables:
 - Asset detail page.
 - Asset create/edit flow.
 - Metadata hash generation.
-- Mock or real Solana transaction field for asset registration.
+- Mock transaction field for asset registration.
 
 Demo checkpoint:
 
@@ -175,29 +176,11 @@ Demo checkpoint:
 
 - Customer sees the allocated certificate claim in the portfolio with status and proof link.
 
-### Milestone 7: Solana Devnet proof integration
+### Milestone 7: Public audit trace with mocked proofs
 
 Objective:
 
-- Replace mock proof fields with real Solana Devnet transaction references for the critical lifecycle events.
-
-Deliverables:
-
-- Anchor program with core accounts and instructions.
-- Solana client integration.
-- Transaction status persistence.
-- On-chain references linked to off-chain records.
-- Error states for transaction failures.
-
-Demo checkpoint:
-
-- Asset, measurement, batch, and claim lifecycle events display Solana Devnet transaction references.
-
-### Milestone 8: Public audit and demo readiness
-
-Objective:
-
-- Make the public trace page the strongest proof of the MVP.
+- Make the traceability story complete before real Solana integration.
 
 Deliverables:
 
@@ -205,13 +188,32 @@ Deliverables:
 - Trace visualization from asset to claim.
 - Quantity consistency checks.
 - Metadata hash display.
-- Solana transaction links.
-- Demo seed data.
+- Mock transaction reference display.
+- Demo seed data for the full lifecycle.
+
+Demo checkpoint:
+
+- Auditor opens a public proof link and verifies the full certificate trace with mocked proof references.
+
+### Milestone 8: Solana Devnet proof integration and demo readiness
+
+Objective:
+
+- Replace mock proof fields with real Solana Devnet transaction references for the critical lifecycle events and stabilize the final demo.
+
+Deliverables:
+
+- Anchor program with core accounts and instructions.
+- Solana client integration through the proof adapter.
+- Transaction status persistence.
+- On-chain references linked to off-chain records.
+- Error states for transaction failures.
+- Solana transaction links in the audit trace.
 - Deployed MVP environment.
 
 Demo checkpoint:
 
-- Auditor opens a public proof link and verifies the full certificate trace.
+- Asset, measurement, batch, and claim lifecycle events display real Solana Devnet transaction references, with mocked proof mode available as fallback.
 
 ## 6. MVP Roadmap Timeline
 
@@ -225,8 +227,8 @@ This is a logical sequence, not a fixed calendar. If delivery time is short, red
 | 4 | Certificate batch creation | Certificate inventory exists |
 | 5 | Marketplace and negotiation flow | Customer demand exists |
 | 6 | Claim and portfolio flow | Customer allocation exists |
-| 7 | Solana Devnet proof integration | Lifecycle proofs exist on-chain |
-| 8 | Public audit and demo readiness | Traceability can be verified publicly |
+| 7 | Public audit trace with mocked proofs | Traceability can be verified through application records |
+| 8 | Solana Devnet proof integration and demo readiness | Mock proofs are replaced by on-chain lifecycle proofs |
 
 ## 7. Architecture Evolution Roadmap
 
@@ -264,14 +266,28 @@ Purpose:
 Add a Solana integration boundary before the full Anchor program is complete:
 
 - Define a `ProofService` or equivalent adapter.
-- Support mock and real modes.
+- Support mock mode first and real Solana mode later.
 - Normalize transaction results.
 
 Purpose:
 
 - Avoid coupling every feature directly to wallet and RPC concerns.
+- Let Phases 2-7 use mocked transaction references without changing the future proof contract.
 
-### Step 4: Anchor program integration
+### Step 4: Audit trace hardening
+
+Build the public trace from database records, lifecycle events, metadata hashes, and mocked transaction references:
+
+- Show event order.
+- Show transaction references.
+- Show metadata hashes.
+- Show consistency checks.
+
+Purpose:
+
+- Demonstrate why the proof layer exists before the Solana implementation is complete.
+
+### Step 5: Anchor program integration
 
 Deploy `certigrid_program` to Solana Devnet:
 
@@ -284,19 +300,6 @@ Deploy `certigrid_program` to Solana Devnet:
 Purpose:
 
 - Make the audit layer real.
-
-### Step 5: Audit trace hardening
-
-Build the public trace from both database records and on-chain references:
-
-- Show event order.
-- Show transaction references.
-- Show metadata hashes.
-- Show consistency checks.
-
-Purpose:
-
-- Demonstrate why blockchain is used.
 
 ### Step 6: Demo stabilization
 
@@ -317,7 +320,7 @@ Purpose:
 | Risk | Roadmap impact | Mitigation |
 | --- | --- | --- |
 | Blockchain work starts too early | UI and domain flow may stall | Start with a proof adapter, then swap mock for real Solana |
-| Blockchain work starts too late | Audit module may be superficial | Integrate Solana before final demo hardening |
+| Blockchain work starts too late | Audit module may be superficial | Build the audit trace with mocked references first, then replace them in the final integration phase |
 | Marketplace becomes too broad | MVP loses focus | Keep negotiation simple and off-chain |
 | No measurement reuse protection | Certificate supply becomes invalid | Enforce one-time measurement usage |
 | Audit page is weak | Blockchain value is unclear | Treat audit trace as a milestone, not polish |
@@ -337,5 +340,7 @@ The MVP is complete when the team can run this script end to end:
 8. Update claim status.
 9. Open a public audit page.
 10. Verify asset, measurement, batch, claim, metadata hashes, quantities, and Solana transaction references.
+
+Before Milestone 8, transaction references are explicitly mocked. Milestone 8 replaces the mocked references with real Solana Devnet transactions for the final proof path.
 
 Anything that does not support this script should be considered post-MVP unless it removes a direct delivery risk.

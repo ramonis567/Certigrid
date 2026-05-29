@@ -4,16 +4,16 @@
 
 This plan breaks the Certigrid MVP into a maximum of 8 incremental phases. Each phase should produce a demonstrable outcome that moves the system closer to the README objective:
 
-> Admin registers renewable energy assets, the platform simulates measurements, valid measurements and certificate batches are registered on Solana, customers negotiate or request certificates, claims are updated, and any user can verify the certificate trace publicly.
+> Admin registers renewable energy assets, the platform simulates measurements, valid measurements and certificate batches receive deterministic proof records, customers negotiate or request certificates, claims are updated, and any user can verify the certificate trace publicly. Until the final Solana integration phase, transaction references are mocked.
 
 The plan assumes the target stack defined in the README:
 
 - Next.js, React, TypeScript, Tailwind CSS.
 - Next.js API routes.
 - Supabase / PostgreSQL.
-- Solana Devnet.
-- Anchor Framework and Rust.
-- Solana Wallet Adapter.
+- Solana Devnet in the final integration phase.
+- Anchor Framework and Rust in the final integration phase.
+- Solana Wallet Adapter when real wallet signing is introduced.
 - Vercel and Supabase deployment.
 
 ## 2. Delivery Rules
@@ -25,6 +25,8 @@ The plan assumes the target stack defined in the README:
 - Do not add stablecoin settlement.
 - Keep negotiation off-chain until accepted and converted into a claim.
 - Use Solana as a proof layer, not as the full application database.
+- Use mocked transaction references for proof events until the final Solana integration phase.
+- Keep proof generation behind an adapter boundary so mock references can be replaced by real Solana transactions.
 - Prioritize the public audit trace because it justifies blockchain usage.
 
 ## 3. Phase Summary
@@ -37,8 +39,8 @@ The plan assumes the target stack defined in the README:
 | 4 | Certificate batch inventory | Admin can create certificate batches from measurements |
 | 5 | Marketplace and negotiation | Customer can request certificates from available batches |
 | 6 | Claim and portfolio lifecycle | Accepted requests become customer claims |
-| 7 | Solana Devnet integration | Core lifecycle proofs are registered on-chain |
-| 8 | Public audit and demo release | End-to-end trace is publicly verifiable |
+| 7 | Public audit trace with mocked proofs | End-to-end trace is verifiable through application records and mock transaction references |
+| 8 | Solana Devnet integration and demo release | Mock proof references are replaced by real Solana Devnet transactions |
 
 ## 4. Phase 1: Product and Technical Foundation
 
@@ -58,6 +60,7 @@ Create the foundation for a modular MVP without overbuilding production infrastr
   - Audit.
 - Add seed data strategy for demo records.
 - Add environment variable placeholders for Supabase, Solana RPC, and program ID.
+- Define the proof adapter contract with mock mode as the default.
 
 ### Domain decisions
 
@@ -76,7 +79,7 @@ Confirm these lifecycle objects:
 - `Negotiation`
 - `CertificateClaim`
 - `LifecycleEvent`
-- `SolanaTransaction`
+- `ProofTransaction`
 
 ### Acceptance criteria
 
@@ -84,6 +87,7 @@ Confirm these lifecycle objects:
 - Main navigation exists.
 - Domain status enums are defined.
 - A seed/demo mode can render at least one asset, one batch, and one claim placeholder.
+- Mock proof references can be rendered consistently.
 - README, architecture, roadmap, and plan agree on MVP scope.
 
 ### Risks
@@ -105,7 +109,7 @@ Let a platform admin register and inspect renewable energy assets.
 - Asset creation form.
 - Asset status management.
 - Metadata hash generation.
-- Placeholder Solana transaction reference field.
+- Mocked transaction reference field.
 
 ### Required asset fields
 
@@ -128,12 +132,13 @@ Let a platform admin register and inspect renewable energy assets.
 - Admin can create a renewable energy asset.
 - Admin can view the asset details.
 - Asset metadata hash is generated deterministically.
+- Asset registration creates or displays a mocked transaction reference.
 - Asset appears as eligible for measurement simulation when active.
 
 ### Risks
 
-- Risk: asset fields drift from the Anchor account design.
-- Mitigation: keep shared types aligned with the README account specification.
+- Risk: asset fields drift from the future Anchor account design.
+- Mitigation: keep shared types aligned with the README account specification and keep only compact references/hashes in the proof contract.
 
 ## 6. Phase 3: Simulation and Measurement Workflow
 
@@ -156,6 +161,7 @@ Generate credible simulated energy measurements and approve them for certificate
 - Measurement approval and rejection.
 - Measurement hash generation.
 - Measurement status history.
+- Mocked transaction reference generation for proof-ready approved measurements.
 
 ### Formula
 
@@ -189,6 +195,7 @@ MVP assumptions:
 - Admin can generate measurement records for an active asset.
 - Admin can approve or reject generated records.
 - Approved measurements have a deterministic `measurement_hash`.
+- Approved measurements can receive a mocked proof transaction reference.
 - Rejected measurements cannot be used for certificate batches.
 
 ### Risks
@@ -200,7 +207,7 @@ MVP assumptions:
 
 ### Goal
 
-Create certificate batches from approved and registered measurements.
+Create certificate batches from approved measurements that have proof records. Before Solana integration, those proof records use mocked transaction references.
 
 ### Scope
 
@@ -210,6 +217,7 @@ Create certificate batches from approved and registered measurements.
 - Batch status management.
 - Measurement reuse prevention.
 - Batch metadata hash generation.
+- Mocked transaction reference generation for batch creation.
 - Marketplace visibility flag or status.
 
 ### Required batch fields
@@ -240,6 +248,7 @@ Create certificate batches from approved and registered measurements.
 - Admin can create a batch from eligible measurements.
 - Batch quantity equals the sum of eligible MWh.
 - Used measurements are marked `UsedForCertificate`.
+- Batch creation creates or displays a mocked transaction reference.
 - The same measurement cannot be used in two batches.
 - Available quantity starts equal to total quantity.
 
@@ -336,15 +345,57 @@ Convert accepted negotiations into certificate claims and show customer ownershi
 - Risk: negotiation status and claim status become inconsistent.
 - Mitigation: make conversion explicit and mark negotiation as `ConvertedToClaim`.
 
-## 10. Phase 7: Solana Devnet Integration
+## 10. Phase 7: Public Audit Trace with Mocked Proofs
 
 ### Goal
 
-Register critical lifecycle proofs on Solana Devnet.
+Make the traceability story demonstrable before real Solana integration by showing the full lifecycle with deterministic hashes and mocked transaction references.
 
 ### Scope
 
-- Create Anchor program `certigrid_program`.
+- Public audit search by `batch_id` or `claim_id`.
+- Trace visualization from asset to measurement to batch to claim.
+- Metadata hash display.
+- Mock transaction reference display.
+- Quantity consistency checks.
+- Status history.
+- Proof adapter mock mode.
+- Demo seed data that exercises the full lifecycle.
+
+### Minimum trace
+
+```text
+Energy Asset Registered
+-> Measurements Generated
+-> Measurements Proof-Recorded
+-> Certificate Batch Created
+-> Certificate Batch Proof-Recorded
+-> Customer Claim Created
+-> Claim Status Updated
+```
+
+### Acceptance criteria
+
+- Public user can search a batch or claim.
+- Public user can see the full lifecycle trace.
+- Trace includes asset origin, measurement summary, batch details, claim details, metadata hashes, and mocked transaction references.
+- The mock proof adapter produces stable transaction-like references for seeded demo data.
+- Demo scenario can be completed end to end without manual database edits.
+
+### Risks
+
+- Risk: mocked proofs make the blockchain value look superficial.
+- Mitigation: expose the proof status clearly as mocked and keep the same proof event shape required by the future Solana adapter.
+
+## 11. Phase 8: Solana Devnet Integration and Demo Release
+
+### Goal
+
+Replace mocked proof references with real Solana Devnet transaction references for critical lifecycle events and stabilize the final demo.
+
+### Scope
+
+- Create or complete Anchor program `certigrid_program`.
 - Implement core accounts:
   - `EnergyAsset`
   - `MeasurementRecord`
@@ -357,38 +408,10 @@ Register critical lifecycle proofs on Solana Devnet.
   - `create_claim`
   - `update_claim_status`
   - `cancel_claim` if time allows.
-- Add Solana client layer in the web/API application.
+- Add real Solana client mode behind the proof adapter.
 - Store transaction hashes and statuses.
 - Link on-chain references to off-chain records.
-
-### Acceptance criteria
-
-- Asset registration can produce a Solana Devnet transaction hash.
-- Measurement registration can produce a Solana Devnet transaction hash.
-- Batch creation can produce a Solana Devnet transaction hash.
-- Claim creation or status update can produce a Solana Devnet transaction hash.
-- Transaction failures are visible and do not corrupt off-chain state.
-
-### Risks
-
-- Risk: wallet authority and transaction signing slow down delivery.
-- Mitigation: start with admin-controlled Devnet authority and isolate Solana calls behind a service layer.
-
-## 11. Phase 8: Public Audit and Demo Release
-
-### Goal
-
-Deliver the complete proof of concept and make traceability publicly verifiable.
-
-### Scope
-
-- Public audit search by `batch_id` or `claim_id`.
-- Trace visualization.
-- Transaction hash display.
-- Metadata hash display.
-- Quantity consistency checks.
-- Status history.
-- Demo seed data.
+- Preserve mocked proof mode as a demo fallback.
 - Deployment to Vercel.
 - Supabase environment configuration.
 - Solana Devnet program ID configuration.
@@ -410,13 +433,17 @@ Energy Asset Registered
 
 - Public user can search a batch or claim.
 - Public user can see the full lifecycle trace.
-- Trace includes asset origin, measurement summary, batch details, claim details, metadata hashes, and transaction references.
-- Demo scenario can be completed end to end without manual database edits.
+- Trace includes asset origin, measurement summary, batch details, claim details, metadata hashes, and real or explicitly mocked transaction references.
+- Asset registration can produce a Solana Devnet transaction hash.
+- Measurement registration can produce a Solana Devnet transaction hash.
+- Batch creation can produce a Solana Devnet transaction hash.
+- Claim creation or status update can produce a Solana Devnet transaction hash.
+- Transaction failures are visible and do not corrupt off-chain state.
 
 ### Risks
 
-- Risk: public audit page is treated as final polish.
-- Mitigation: make audit trace a core deliverable and test it against seeded demo data.
+- Risk: wallet authority and transaction signing slow down delivery.
+- Mitigation: keep Solana calls isolated behind the proof adapter, preserve mock mode as fallback, and integrate the smallest complete on-chain path first.
 
 ## 12. Cross-Phase Testing Strategy
 
@@ -438,7 +465,8 @@ Cover:
 
 - API routes for assets, measurements, batches, negotiations, and claims.
 - Supabase persistence.
-- Solana client success and failure states.
+- Proof adapter success and failure states.
+- Solana client success and failure states in the final integration phase.
 
 ### Demo tests
 
@@ -467,8 +495,8 @@ Do not cut:
 - Measurement generation.
 - Certificate batch creation.
 - Claim creation.
-- Public audit trace.
-- At least one Solana Devnet proof path.
+- Public audit trace with deterministic hashes and mocked proof references.
+- Final Solana Devnet replacement for at least one critical proof path when entering Phase 8.
 
 ## 14. Final MVP Demonstration Script
 
@@ -478,9 +506,9 @@ The finished MVP should support this exact script:
 2. Admin registers or selects a solar asset.
 3. Admin generates simulated measurements for a period.
 4. Admin approves the measurements.
-5. Admin registers the measurements on Solana Devnet.
+5. System records measurement proof references. Before Phase 8, these are mocked; in Phase 8, they are Solana Devnet transactions.
 6. Admin creates a certificate batch.
-7. Admin registers the certificate batch on Solana Devnet.
+7. System records certificate batch proof references. Before Phase 8, these are mocked; in Phase 8, they are Solana Devnet transactions.
 8. Customer opens the marketplace.
 9. Customer inspects the certificate batch.
 10. Customer requests part of the available quantity.

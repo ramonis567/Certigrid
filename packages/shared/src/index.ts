@@ -1,5 +1,11 @@
 export type EnergyAssetStatus = "Draft" | "Active" | "Inactive";
 
+export type EnergySource = "Solar" | "Wind" | "Hydro" | "Biomass" | "Other";
+
+export type ProofMode = "Mock" | "SolanaDevnet";
+
+export type ProofStatus = "Mocked" | "Pending" | "Confirmed" | "Failed";
+
 export type MeasurementStatus =
   | "DraftOffChain"
   | "Approved"
@@ -38,13 +44,32 @@ export interface EnergyAsset {
   adminWallet: string;
   assetOwnerWallet: string;
   assetName: string;
-  energySource: "Solar" | "Wind" | "Hydro" | "Biomass" | "Other";
+  assetNameHash: string;
+  energySource: EnergySource;
+  location: string;
+  locationHash: string;
+  installedCapacityMw: number;
+  status: EnergyAssetStatus;
+  metadataHash: string;
+  proofMode: ProofMode;
+  proofStatus: ProofStatus;
+  proofTransactionReference: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateEnergyAssetInput {
+  adminWallet: string;
+  assetOwnerWallet: string;
+  assetName: string;
+  energySource: EnergySource;
   location: string;
   installedCapacityMw: number;
   status: EnergyAssetStatus;
-  metadataHash?: string;
-  createdAt: string;
-  updatedAt: string;
+}
+
+export interface UpdateEnergyAssetStatusInput {
+  status: EnergyAssetStatus;
 }
 
 export interface MeasurementRecord {

@@ -2,16 +2,16 @@
 
 ## Project Context
 
-Certigrid is an MVP proof of concept for renewable energy certificate traceability and marketplace operations. The platform turns simulated renewable energy generation into auditable certificate records, using Solana Devnet as the integrity and traceability layer.
+Certigrid is an MVP proof of concept for renewable energy certificate traceability and marketplace operations. The platform turns simulated renewable energy generation into auditable certificate records. Frontend and application-backend phases use deterministic hashes and mocked transaction references; the final integration phase replaces those mocks with Solana Devnet transactions.
 
 Primary demo narrative:
 
 1. An admin registers a renewable energy asset.
 2. The platform simulates generation measurements.
-3. Approved measurements are registered on Solana.
+3. Approved measurements receive deterministic proof records.
 4. Measurements are aggregated into certificate batches.
 5. Customers negotiate or request certificate allocations.
-6. Claims and lifecycle changes are registered or referenced on-chain.
+6. Claims and lifecycle changes are proof-recorded with mocked transaction references until final Solana integration.
 7. Auditors verify the certificate trace through a public audit module.
 
 ## Product Boundaries
@@ -25,8 +25,8 @@ In scope:
 - Certificate batch creation from approved measurements.
 - Customer marketplace, negotiation, and allocation flows.
 - Customer certificate portfolio and proof links.
-- Public certificate trace and Solana transaction references.
-- Off-chain metadata with on-chain hashes and lifecycle references.
+- Public certificate trace and transaction references.
+- Off-chain metadata with deterministic hashes and lifecycle references.
 
 Out of scope for the MVP:
 
@@ -45,8 +45,8 @@ Unless the user specifies otherwise, assume this target stack from the README:
 - Frontend: Next.js, React, TypeScript, Tailwind CSS.
 - Backend: Next.js API routes.
 - Database: Supabase / PostgreSQL.
-- Blockchain: Solana Devnet, Anchor, Rust.
-- Wallet integration: Solana Wallet Adapter.
+- Blockchain: mocked proof adapter first; Solana Devnet, Anchor, and Rust in the final integration phase.
+- Wallet integration: Solana Wallet Adapter when real signing is introduced.
 - Deployment: Vercel and Supabase.
 
 Trade-off: Next.js API routes are enough for an MVP, but complex background processing, event indexing, or blockchain retry handling may eventually require a dedicated worker or backend service.
@@ -57,17 +57,17 @@ Use these concepts consistently:
 
 - `EnergyAsset`: renewable generation asset registered by an admin.
 - `MeasurementRecord`: simulated generation result for a defined period.
-- `CertificateBatch`: aggregated certificate quantity created from registered measurements.
+- `CertificateBatch`: aggregated certificate quantity created from approved, proof-recorded measurements.
 - `CertificateClaim`: customer allocation, reservation, purchase, delivery, retirement, or cancellation lifecycle record.
 - `Negotiation`: off-chain commercial workflow that may convert into a claim.
-- `AuditTrace`: public lifecycle view linking asset, measurements, batch, claim, and Solana references.
+- `AuditTrace`: public lifecycle view linking asset, measurements, batch, claim, hashes, and transaction references.
 
 Important invariant:
 
 - Measurements can only be used once for certificate batch creation.
 - Batch quantity must be derived from eligible certificate MWh.
 - Availability must decrease when claims reserve or purchase quantity.
-- On-chain data should store compact references and hashes; detailed metadata remains off-chain.
+- Proof data should store compact references and hashes; detailed metadata remains off-chain. Before final Solana integration, proof references are mocked.
 
 ## Implementation Priorities
 
@@ -75,18 +75,18 @@ When building features, prefer this order:
 
 1. Domain schema and lifecycle rules.
 2. Admin asset and simulation workflow.
-3. Measurement approval and registration flow.
+3. Measurement approval and proof-recording flow.
 4. Certificate batch creation.
 5. Marketplace listing and negotiation flow.
 6. Claim/allocation status flow.
-7. Public audit trace.
-8. Solana integration hardening and transaction display.
+7. Public audit trace with mocked transaction references.
+8. Solana integration and real transaction display.
 
 This order keeps the demo coherent because each later flow depends on the previous lifecycle state.
 
 ## Blockchain Guidance
 
-Use Solana as the audit and integrity layer, not as the full application database.
+Use Solana as the final audit and integrity layer, not as the full application database. Until final Solana integration, use mocked transaction references behind a proof adapter.
 
 Prefer on-chain storage for:
 
@@ -109,6 +109,8 @@ Prefer off-chain storage for:
 
 Risk: putting too much mutable or verbose business data on-chain will make iteration slower, raise costs, and complicate schema changes. Keep on-chain records compact and verifiable.
 
+Risk: mocked proofs can diverge from real Solana results if the contract is loose. Keep one proof transaction shape for mock and real modes, including proof mode, status, transaction reference, metadata hash, related entity, and lifecycle event.
+
 ## UX Guidance
 
 Build the actual operational experience first, not a marketing landing page.
@@ -125,7 +127,7 @@ Key surfaces:
 - Customer portfolio.
 - Public audit search and trace page.
 
-The audit trace is central to the product story. Make the lifecycle visually clear and include Solana transaction references wherever available.
+The audit trace is central to the product story. Make the lifecycle visually clear and include transaction references wherever available. Before final Solana integration, label mocked references clearly.
 
 ## Coding Guidance
 

@@ -8,13 +8,15 @@ Certigrid is a Web3-enabled platform for renewable energy certificate traceabili
 
 1. Admin registers renewable energy assets.
 2. The platform simulates renewable energy measurements.
-3. Approved measurements are registered on Solana Devnet.
+3. Approved measurements receive deterministic proof records.
 4. Measurements are aggregated into certificate batches.
-5. Certificate batches are registered on Solana.
+5. Certificate batches receive deterministic proof records.
 6. Customers negotiate or request certificates.
 7. Purchase or allocation is confirmed.
 8. Certificate ownership and status are updated.
 9. Any user can verify certificate traceability through a public audit module.
+
+Until final Solana integration, proof records use mocked transaction references. The final integration phase replaces those mocked references with real Solana Devnet transactions.
 
 The architecture must support this story without pretending to be a production REC or iREC registry.
 
@@ -32,6 +34,12 @@ Trade-off:
 ### 2.2 Off-chain system of work, on-chain system of proof
 
 Certigrid should use the application database as the operational system of record and Solana as the integrity and audit layer.
+
+Delivery decision:
+
+- Build the frontend and application backend lifecycle first.
+- Generate deterministic hashes and mocked transaction references through the proof adapter.
+- Integrate real Solana Devnet transactions only after the lifecycle, audit trace, and application rules are demonstrable.
 
 Store off-chain:
 
@@ -130,15 +138,18 @@ flowchart LR
 
   Web --> API["Next.js API Routes"]
   API --> DB["Supabase / PostgreSQL"]
-  API --> SolanaClient["Solana Client Layer"]
+  API --> Proof["Proof Adapter"]
+  Proof --> MockProof["Mock Proof Mode"]
+  Proof --> SolanaClient["Solana Client Layer"]
   SolanaClient --> Program["certigrid_program on Solana Devnet"]
 
   DB --> Audit["Audit Trace Builder"]
+  MockProof --> Audit
   Program --> Audit
   Audit --> PublicTrace["Public Audit Page"]
 ```
 
-The web app is the main interface for all MVP roles. API routes enforce domain rules, persist off-chain records, and call Solana when lifecycle events require an on-chain proof.
+The web app is the main interface for all MVP roles. API routes enforce domain rules, persist off-chain records, and call the proof adapter when lifecycle events require a proof reference. Before final Solana integration, the adapter returns mocked transaction references. In the final phase, it submits real Solana transactions.
 
 ## 5. Module Architecture
 
@@ -159,12 +170,13 @@ Primary flows:
 
 - Register asset off-chain.
 - Generate metadata hash.
-- Register asset reference on-chain through `register_asset`.
-- Display Solana transaction reference.
+- Generate mocked proof transaction reference through the proof adapter.
+- Later replace the mock proof with `register_asset` on Solana Devnet.
+- Display transaction reference and proof status.
 
 Key risk:
 
-- If asset registration is only local and not linked to a transaction, the audit story becomes weak.
+- If mocked proof records use a different shape from future Solana records, the integration phase will require rework.
 
 ### 5.2 Simulation and Measurement
 
@@ -172,7 +184,7 @@ Purpose:
 
 - Generate credible simulated energy measurements for registered assets.
 - Let admins approve or reject measurements.
-- Register approved measurements on Solana.
+- Register approved measurements through the proof adapter, using mocked transaction references until final Solana integration.
 
 Core formula:
 
@@ -211,7 +223,7 @@ Purpose:
 
 - Aggregate registered measurements into certificate batches.
 - Track available certificate quantity and commercial status.
-- Register batch creation on Solana.
+- Register batch creation through the proof adapter, using mocked transaction references until final Solana integration.
 
 Primary states:
 
@@ -223,7 +235,7 @@ Primary states:
 
 Key invariants:
 
-- Only approved and on-chain registered measurements can create a batch.
+- Only approved and proof-recorded measurements can create a batch.
 - Batch quantity equals the sum of eligible MWh from selected measurements.
 - Selected measurements are marked `UsedForCertificate`.
 - Available quantity cannot go below zero.
@@ -249,7 +261,7 @@ Purpose:
 
 - Let customers request quantity from a certificate batch.
 - Let admins review, counter, accept, reject, expire, or convert requests.
-- Register final accepted claims on-chain.
+- Register final accepted claims through the proof adapter, using mocked transaction references until final Solana integration.
 
 Negotiation states:
 
@@ -280,23 +292,24 @@ Purpose:
 
 - Let any user search by batch ID or claim ID.
 - Show the full lifecycle trace from asset registration to claim status.
-- Display Solana transaction references and metadata hashes.
+- Display transaction references, proof status, and metadata hashes. Until final Solana integration, transaction references are mocked.
 
 Minimum trace:
 
 ```text
 Energy Asset Registered
 -> Measurements Generated
--> Measurements Registered on Solana
+-> Measurements Proof-Recorded
 -> Certificate Batch Created
--> Certificate Batch Registered
+-> Certificate Batch Proof-Recorded
 -> Customer Claim Created
 -> Claim Status Updated
 ```
 
 Audit data:
 
-- Transaction hashes.
+- Transaction references.
+- Proof mode: mocked or Solana Devnet.
 - Metadata hashes.
 - Quantity consistency.
 - Status history.
@@ -319,7 +332,7 @@ Recommended MVP tables:
 - `negotiations`
 - `certificate_claims`
 - `lifecycle_events`
-- `solana_transactions`
+- `proof_transactions`
 
 ### 6.2 Shared identifiers
 
@@ -354,9 +367,40 @@ Risk:
 
 - Hashes are only useful if the same canonical serialization is used consistently. Define one canonical JSON shape before generating hashes.
 
-## 7. On-Chain Architecture
+### 6.4 Proof transactions
 
-### 7.1 Program
+Use one application-level proof transaction record shape for both mocked and real proofs.
+
+Recommended fields:
+
+- `proof_transaction_id`
+- `related_entity_type`
+- `related_entity_id`
+- `lifecycle_event_type`
+- `proof_mode`
+- `status`
+- `transaction_reference`
+- `metadata_hash`
+- `created_at`
+- `confirmed_at`
+
+For Phases 2-7, `proof_mode` is `mock` and `transaction_reference` is generated deterministically for demo stability. In the final Solana phase, `proof_mode` becomes `solana_devnet` and `transaction_reference` stores the real transaction signature.
+
+## 7. Proof Adapter and On-Chain Architecture
+
+### 7.1 Proof adapter
+
+The application should call a proof adapter instead of calling Solana directly from feature modules.
+
+Required behavior:
+
+- Accept a lifecycle event and canonical metadata hash.
+- Return a normalized proof transaction result.
+- Support mock mode through Phases 2-7.
+- Support Solana Devnet mode in the final integration phase.
+- Preserve failed and pending transaction states without corrupting off-chain lifecycle state.
+
+### 7.2 Program
 
 The MVP uses one Anchor program:
 
@@ -371,7 +415,7 @@ The program contains:
 - Certificate batch logic.
 - Customer claim logic.
 
-### 7.2 Instructions
+### 7.3 Instructions
 
 Required:
 
@@ -385,7 +429,7 @@ Optional:
 
 - `cancel_claim`
 
-### 7.3 Accounts
+### 7.4 Accounts
 
 Core account types:
 
@@ -394,7 +438,7 @@ Core account types:
 - `CertificateBatch`
 - `CertificateClaim`
 
-### 7.4 On-chain constraints
+### 7.5 On-chain constraints
 
 The program should enforce at least:
 
@@ -406,7 +450,7 @@ The program should enforce at least:
 
 MVP trade-off:
 
-- Some validations can be duplicated off-chain for speed of development, but the critical quantity and ownership invariants should be enforced on-chain or clearly represented in on-chain events.
+- Some validations can be duplicated off-chain for speed of development, but the critical quantity and ownership invariants should be enforced in the application backend before Solana integration and later mirrored or represented in on-chain events.
 
 ## 8. Architecture Evolution
 
@@ -437,7 +481,7 @@ Architecture:
 
 - Next.js app.
 - Static seed data or local in-memory data.
-- Mock Solana transaction hashes.
+- Mock transaction references.
 - No persistent database required.
 
 Risk:
@@ -449,19 +493,36 @@ Risk:
 Purpose:
 
 - Make lifecycle state persistent and enforce off-chain rules.
+- Use deterministic hashes and mocked transaction references for proof events.
 
 Architecture:
 
 - Next.js app and API routes.
 - Supabase / PostgreSQL.
 - Domain services for assets, measurements, batches, negotiations, claims, and audit events.
-- Mock or adapter-based blockchain client.
+- Proof adapter in mock mode.
 
 Risk:
 
 - If database rules are not aligned with future on-chain rules, integration will cause rework.
 
-### Stage 3: Solana Devnet integration
+### Stage 3: Audit-ready application MVP
+
+Purpose:
+
+- Prove the full traceability workflow before live blockchain work.
+
+Architecture:
+
+- Audit trace builder combines database records, lifecycle events, metadata hashes, and mocked transaction references.
+- Public search by `batch_id` or `claim_id`.
+- Trace page shows consistency checks and proof status.
+
+Risk:
+
+- Mock proofs can hide integration complexity. Keep the proof adapter contract close to the future Solana result shape.
+
+### Stage 4: Solana Devnet integration
 
 Purpose:
 
@@ -470,29 +531,13 @@ Purpose:
 Architecture:
 
 - Anchor program.
-- Next.js API routes call a Solana client layer.
-- Transaction hashes stored in `solana_transactions`.
+- Next.js API routes call the proof adapter in Solana mode.
+- Transaction hashes stored in `proof_transactions`.
 - On-chain references linked to off-chain records.
 
 Risk:
 
 - Wallet authority, program-derived addresses, and transaction failure recovery can slow delivery. Start with the smallest complete on-chain path.
-
-### Stage 4: Audit-first MVP
-
-Purpose:
-
-- Make public verification the clearest part of the demo.
-
-Architecture:
-
-- Audit trace builder combines database records, lifecycle events, and Solana transaction references.
-- Public search by `batch_id` or `claim_id`.
-- Trace page shows consistency checks and transaction links.
-
-Risk:
-
-- If the trace page is built too late, the demo may show marketplace screens without proving why blockchain matters.
 
 ### Stage 5: Demo-ready release
 
@@ -555,6 +600,7 @@ Operational dependencies:
 | --- | --- | --- |
 | On-chain scope is too large | Delays MVP delivery | Keep detailed data off-chain and store compact proofs on-chain |
 | Audit page is built too late | Weak blockchain justification | Build traceability as a core milestone, not a final polish item |
+| Mocked proof references diverge from Solana results | Final integration requires UI and API rewrites | Use one proof transaction shape for mock and real modes |
 | Negotiation and claim states diverge | Inconsistent customer ownership story | Define explicit conversion from accepted negotiation to claim |
 | Measurement reuse is not prevented | Invalid certificate supply | Enforce one-time measurement usage in database and program logic |
 | Transaction failures are not modeled | Broken demo flow | Store pending, confirmed, and failed transaction states |
@@ -562,6 +608,6 @@ Operational dependencies:
 
 ## 11. MVP Architecture Decision
 
-For the MVP, use a modular Next.js application with Supabase persistence and one Anchor program on Solana Devnet. Treat the database as the operational state layer and Solana as the proof layer.
+For the MVP, use a modular Next.js application with Supabase persistence and a proof adapter. Treat the database as the operational state layer. Through the frontend and application-backend phases, use deterministic hashes and mocked transaction references. In the final integration phase, connect the proof adapter to one Anchor program on Solana Devnet and replace mocked references with real transaction signatures.
 
 This is the best fit for the README objective because it proves the full certificate lifecycle, keeps delivery realistic, and makes the public audit module the visible justification for blockchain use.

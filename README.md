@@ -26,7 +26,7 @@ May 2026
 Web3-enabled web platform for renewable energy certificate traceability and marketplace operations.
 
 ### 1.3 Purpose
-Certigrid is a web platform that allows renewable energy assets to generate **simulated energy measurements**, convert eligible measured energy into **renewable energy certificate records**, expose those certificates to customers through a **negotiation and purchase interface**, and provide a **public audit module** where certificate traces can be verified on-chain.
+Certigrid is a web platform that allows renewable energy assets to generate **simulated energy measurements**, convert eligible measured energy into **renewable energy certificate records**, expose those certificates to customers through a **negotiation and purchase interface**, and provide a **public audit module** where certificate traces can be verified through hashes and transaction references. Until final Solana integration, transaction references are mocked.
 
 The system does **not** integrate with real REC or iREC registries. It demonstrates the **core technical and commercial infrastructure** required to manage renewable energy assets, simulate generation, create certificate records, negotiate allocations, and verify traceability using **Solana**.
 
@@ -41,16 +41,16 @@ The MVP must demonstrate an **end-to-end lifecycle**:
 
 1. Admin registers renewable energy assets  
 2. Platform simulates energy measurements using configurable rules  
-3. Valid measurements are registered on Solana  
+3. Valid measurements receive deterministic proof records  
 4. Measurements are aggregated into certificate batches  
-5. Certificate batches are registered on Solana  
+5. Certificate batches receive deterministic proof records  
 6. Customers negotiate or request certificates  
 7. Purchase or allocation is confirmed  
 8. Certificate ownership and status are updated  
 9. Any user can verify certificate traceability via a public audit module  
 
 ### Demo Narrative
-A solar plant produces simulated energy, Certigrid records the generation data, creates a certificate batch, a customer negotiates and purchases part of that batch, and an auditor verifies the full certificate trace on-chain.
+A solar plant produces simulated energy, Certigrid records the generation data, creates a certificate batch, a customer negotiates and purchases part of that batch, and an auditor verifies the full certificate trace. Before final Solana integration, the trace uses mocked transaction references; after final integration, those references are real Solana Devnet transactions.
 
 ---
 
@@ -67,7 +67,7 @@ Typical issues include:
 - Static documents without verifiable digital trace  
 - No unified link between generation, certificates, and buyers  
 
-Certigrid addresses these challenges by creating a **controlled digital environment** where assets, generation data, certificates, and customer claims are connected through an **auditable on-chain record**.
+Certigrid addresses these challenges by creating a **controlled digital environment** where assets, generation data, certificates, and customer claims are connected through auditable proof records that can later be anchored on-chain.
 
 ---
 
@@ -76,8 +76,8 @@ Certigrid addresses these challenges by creating a **controlled digital environm
 Certigrid provides:
 - Simulated renewable energy asset management  
 - Configurable generation simulation rules  
-- On-chain registration of energy measurements  
-- On-chain registration of certificate batches  
+- Proof registration of energy measurements, mocked until final Solana integration  
+- Proof registration of certificate batches, mocked until final Solana integration  
 - Customer negotiation and purchase workflows  
 - Customer certificate portfolios  
 - Public certificate trace visualization  
@@ -112,7 +112,7 @@ Responsibilities:
 Responsibilities:
 - Search certificate and claim records  
 - Inspect full certificate trace  
-- Verify Solana transaction references  
+- Verify transaction references, mocked before final Solana integration and real after it  
 - Validate linkage between asset, measurement, certificate, and claim  
 
 ### 5.4 Seller / Asset Owner (MVP)
@@ -133,7 +133,7 @@ Core features:
 - Purchase/allocation confirmation  
 - Customer certificate portfolio  
 - Certificate proof page  
-- Solana transaction hash display  
+- Transaction reference display  
 
 ---
 
@@ -158,7 +158,7 @@ Public verification module justifying blockchain usage.
 Core features:
 - Public search by batch ID or claim ID  
 - Full lifecycle trace visualization  
-- On-chain transaction references  
+- Transaction references  
 - Asset origin details  
 - Measurement summaries  
 - Certificate batch details  
@@ -168,6 +168,8 @@ Core features:
 ---
 
 ## 7. Blockchain Scope — Solana
+
+Solana integration is deferred to the final integration phase. Before that phase, the application uses deterministic metadata hashes and mocked transaction references with the same proof shape expected from the real Solana adapter.
 
 ### 7.1 Blockchain Role
 Solana serves as the **integrity, traceability, and audit layer**.
@@ -333,7 +335,7 @@ MVP rules:
 
 ## 11. Certificate Generation Logic
 
-- Only approved and registered measurements can be used  
+- Only approved and proof-recorded measurements can be used  
 - Measurements cannot be reused across batches  
 - Batch quantity equals sum of eligible MWh  
 - Measurements are marked `UsedForCertificate` after batch creation  
@@ -351,7 +353,7 @@ Negotiation statuses:
 - Expired  
 - ConvertedToClaim  
 
-Final accepted claims are registered on-chain.
+Final accepted claims are proof-recorded through the application backend. Before final Solana integration, the proof reference is mocked; after final integration, it is registered on-chain.
 
 ---
 
@@ -361,15 +363,15 @@ Final accepted claims are registered on-chain.
 
 > Energy Asset Registered
 → Measurements Generated
-→ Measurements Registered on Solana
+→ Measurements Proof-Recorded
 → Certificate Batch Created
-→ Certificate Batch Registered
+→ Certificate Batch Proof-Recorded
 → Customer Claim Created
 → Claim Status Updated
 
 
 ### 13.2 Verification Data
-- Transaction hashes  
+- Transaction references  
 - Metadata hashes  
 - Quantity consistency  
 - Status history  
@@ -383,16 +385,17 @@ Frontend:
 - React
 - TypeScript
 - Tailwind CSS
-- Solana Wallet Adapter
+- Solana Wallet Adapter in the final integration phase
 
 Backend:
 - Next.js API routes
 - Supabase / PostgreSQL
 
 Blockchain:
-- Solana Devnet
-- Anchor Framework
-- Rust
+- Mocked proof adapter before final integration
+- Solana Devnet in the final integration phase
+- Anchor Framework in the final integration phase
+- Rust in the final integration phase
 
 Deployment:
 - Vercel (Frontend)
@@ -416,6 +419,6 @@ Deployment:
 
 ## 16. System Summary
 
-Certigrid MVP is a **Web3-enabled renewable energy certificate platform** that demonstrates how simulated energy generation can be transformed into **auditable, traceable certificate claims**, using Solana as a trusted integrity and audit layer—without replacing official registries.
+Certigrid MVP is a **Web3-enabled renewable energy certificate platform** that demonstrates how simulated energy generation can be transformed into **auditable, traceable certificate claims**. The application proves the lifecycle first with deterministic hashes and mocked transaction references, then uses Solana as the trusted integrity and audit layer in the final integration phase without replacing official registries.
 
 ---
